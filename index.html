@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Wingmark — Dragonfly Field ID</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #182620;
+    --bg-raise: #21322a;
+    --bg-raise-2: #2b3e34;
+    --line: #3c5348;
+    --teal: #5fc4b6;
+    --teal-dim: #3d7c72;
+    --amber: #e6a13a;
+    --amber-dim: #a6742a;
+    --ink: #eee8da;
+    --ink-dim: #a9bdb1;
+    --ink-faint: #74897d;
+    --danger: #c76a52;
+    --radius-card: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.serif{ font-family:'Newsreader', serif; font-weight:500; }
+  ::selection{ background:var(--teal-dim); color:var(--ink); }
+  button{ font-family:inherit; cursor:pointer; }
+  a{ color:var(--teal); }
+
+  /* ---------- App shell ---------- */
+  #app{ max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative; }
+
+  header.top{
+    padding:22px 20px 14px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+    background:var(--bg);
+  }
+  .wordmark{ display:flex; align-items:baseline; gap:9px; }
+  .wordmark h1{ font-size:26px; margin:0; letter-spacing:.2px; color:var(--ink); }
+  .wordmark .dot{ color:var(--amber); font-size:26px; line-height:1; }
+  .tagline{ margin:3px 0 0; font-size:12.5px; color:var(--ink-faint); letter-spacing:.3px; }
+
+  nav.tabs{
+    display:flex; gap:0; margin-top:16px;
+    border-bottom:1px solid var(--line);
+  }
+  nav.tabs button{
+    flex:1; background:none; border:none; color:var(--ink-faint);
+    padding:10px 4px 12px; font-size:13.5px; font-weight:600;
+    letter-spacing:.2px; position:relative; text-transform:uppercase;
+    font-size:12px;
+  }
+  nav.tabs button.active{ color:var(--amber); }
+  nav.tabs button.active::after{
+    content:''; position:absolute; left:14%; right:14%; bottom:-1px; height:2px;
+    background:var(--amber);
+  }
+
+  main{ flex:1; padding:18px 20px 90px; }
+
+  .card{
+    background:var(--bg-raise);
+    border:1px solid var(--line);
+    border-radius:var(--radius-card);
+    padding:16px;
+  }
+
+  /* ---------- Location ---------- */
+  .loc-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .loc-badge{
+    font-size:12px; color:var(--ink-dim); background:var(--bg-raise);
+    border:1px solid var(--line); padding:7px 11px; border-radius:20px;
+    display:flex; align-items:center; gap:7px; flex:1;
+  }
+  .loc-badge b{ color:var(--ink); font-weight:600; }
+  .loc-dot{ width:6px; height:6px; border-radius:50%; background:var(--teal); flex-shrink:0; }
+  select#regionOverride{
+    background:var(--bg-raise-2); color:var(--ink); border:1px solid var(--line);
+    padding:6px 9px; border-radius:20px; font-size:12px; font-family:inherit;
+  }
+  .btn{
+    background:var(--teal); color:#0e1e19; border:none; font-weight:600;
+    padding:11px 18px; border-radius:22px; font-size:14px;
+  }
+  .btn.ghost{ background:transparent; border:1px solid var(--line); color:var(--ink-dim); }
+  .btn.small{ padding:7px 13px; font-size:12.5px; }
+  .btn.amber{ background:var(--amber); color:#241a08; }
+  .btn:disabled{ opacity:.5; }
+
+  /* ---------- Home ---------- */
+  .hero{
+    padding:6px 2px 22px;
+  }
+  .hero h2{ font-size:24px; line-height:1.28; margin:0 0 8px; color:var(--ink); }
+  .hero p{ font-size:14px; color:var(--ink-dim); line-height:1.55; margin:0 0 18px; max-width:44ch;}
+  .hero-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  .stat-strip{ display:flex; gap:10px; margin:22px 0; }
+  .stat{ flex:1; background:var(--bg-raise); border:1px solid var(--line); padding:12px 10px; border-radius:3px; text-align:center;}
+  .stat .n{ font-family:'Newsreader',serif; font-size:22px; color:var(--amber); display:block; }
+  .stat .l{ font-size:10.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.5px; margin-top:2px; display:block;}
+
+  .family-list{ margin-top:26px; }
+  .family-list h3{ font-size:13px; text-transform:uppercase; letter-spacing:.6px; color:var(--ink-faint); font-family:'Work Sans',sans-serif; font-weight:600; margin:0 0 10px;}
+  .fam-row{ display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .fam-row:last-child{ border-bottom:none; }
+  .fam-row .cname{ color:var(--ink); }
+  .fam-row .sname{ color:var(--ink-faint); font-style:italic; font-size:12.5px; }
+  .fam-row .count{ color:var(--teal); font-variant-numeric:tabular-nums; }
+
+  /* ---------- Species list ---------- */
+  .search-bar{
+    display:flex; align-items:center; gap:8px; background:var(--bg-raise);
+    border:1px solid var(--line); border-radius:20px; padding:9px 14px; margin-bottom:14px;
+  }
+  .search-bar input{
+    flex:1; background:none; border:none; color:var(--ink); font-size:14px; font-family:inherit; outline:none;
+  }
+  .search-bar input::placeholder{ color:var(--ink-faint); }
+  .filter-chips{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px; }
+  .chip{
+    font-size:11.5px; padding:5px 11px; border-radius:14px; border:1px solid var(--line);
+    color:var(--ink-dim); background:transparent;
+  }
+  .chip.active{ background:var(--teal-dim); border-color:var(--teal-dim); color:#eafffb; }
+
+  .sp-card{
+    display:flex; gap:12px; padding:13px 4px; border-bottom:1px solid var(--line); cursor:pointer;
+  }
+  .sp-card:active{ background:var(--bg-raise); }
+  .sp-icon{ width:52px; height:66px; flex-shrink:0; }
+  .sp-icon svg{ width:100%; height:100%; }
+  .sp-info{ flex:1; min-width:0; }
+  .sp-info .cn{ font-size:15px; color:var(--ink); font-weight:500; }
+  .sp-info .sn{ font-size:12px; color:var(--ink-faint); font-style:italic; }
+  .sp-meta{ display:flex; gap:8px; margin-top:5px; flex-wrap:wrap; }
+  .tag{ font-size:10px; text-transform:uppercase; letter-spacing:.3px; color:var(--ink-faint); border:1px solid var(--line); padding:2px 7px; border-radius:10px; }
+  .empty-note{ text-align:center; color:var(--ink-faint); font-size:13px; padding:40px 20px; }
+
+  /* ---------- Species detail (modal sheet) ---------- */
+  .sheet-overlay{
+    position:fixed; inset:0; background:rgba(10,16,13,.72); z-index:50;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .sheet{
+    background:var(--bg); width:100%; max-width:520px; max-height:88vh; overflow-y:auto;
+    border-radius:16px 16px 0 0; border:1px solid var(--line); border-bottom:none;
+    padding:20px 20px 30px; position:relative;
+  }
+  .sheet .grabber{ width:36px; height:4px; background:var(--line); border-radius:3px; margin:0 auto 16px; }
+  .sheet-header{ display:flex; gap:16px; align-items:flex-start; }
+  .sheet-icon{ width:80px; height:104px; flex-shrink:0; }
+  .sheet-icon svg{ width:100%; height:100%; }
+  .sheet-header h2{ font-size:21px; margin:0 0 3px; }
+  .sheet-header .sn{ font-style:italic; color:var(--ink-faint); font-size:13px; }
+  .sheet-badges{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .fact-grid{ margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .fact{ background:var(--bg-raise); border:1px solid var(--line); padding:10px 12px; border-radius:3px; }
+  .fact .k{ font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint); }
+  .fact .v{ font-size:13.5px; color:var(--ink); margin-top:3px; }
+  .note-block{ margin-top:16px; font-size:13.5px; line-height:1.6; color:var(--ink-dim); }
+  .note-block .lbl{ font-size:11px; text-transform:uppercase; color:var(--amber); letter-spacing:.4px; margin-bottom:5px; display:block;}
+  .close-x{ position:absolute; top:16px; right:16px; background:var(--bg-raise); border:1px solid var(--line); color:var(--ink-dim); width:30px; height:30px; border-radius:50%; font-size:15px; }
+
+  /* ---------- Matcher ---------- */
+  .matcher-intro{ text-align:center; padding:26px 10px 8px; }
+  .matcher-intro h2{ font-size:22px; margin:0 0 8px; }
+  .matcher-intro p{ font-size:13.5px; color:var(--ink-dim); max-width:38ch; margin:0 auto 20px; }
+
+  .progress-row{ display:flex; gap:5px; margin-bottom:6px; }
+  .progress-row .seg{ flex:1; height:3px; background:var(--line); border-radius:2px; }
+  .progress-row .seg.done{ background:var(--teal); }
+  .progress-row .seg.now{ background:var(--amber); }
+  .step-label{ font-size:11.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.5px; margin-bottom:18px; display:flex; justify-content:space-between; }
+
+  .step-question{ font-size:19px; margin:0 0 4px; }
+  .step-sub{ font-size:13px; color:var(--ink-faint); margin:0 0 18px; }
+
+  .swipe-stage{ position:relative; height:300px; margin-bottom:18px; }
+  .swipe-card{
+    position:absolute; inset:0; background:var(--bg-raise); border:1px solid var(--line);
+    border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:18px; transition:transform .25s ease, opacity .25s ease;
+    touch-action:pan-y;
+  }
+  .swipe-card .icon-wrap{ width:150px; height:190px; }
+  .swipe-card .icon-wrap svg{ width:100%; height:100%; }
+  .swipe-card .trait-name{ margin-top:10px; font-size:16.5px; color:var(--ink); text-align:center; }
+  .swipe-card .trait-hint{ margin-top:4px; font-size:12px; color:var(--ink-faint); text-align:center; max-width:32ch; }
+  .swipe-nav{ display:flex; align-items:center; justify-content:center; gap:16px; }
+  .nav-arrow{
+    width:44px; height:44px; border-radius:50%; background:var(--bg-raise); border:1px solid var(--line);
+    color:var(--ink); font-size:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .pick-btn{
+    flex:1; background:var(--teal); color:#0e1e19; border:none; padding:13px; border-radius:22px;
+    font-weight:600; font-size:14.5px; max-width:220px;
+  }
+  .skip-row{ text-align:center; margin-top:14px; }
+  .skip-row button{ background:none; border:none; color:var(--ink-faint); font-size:12.5px; text-decoration:underline; }
+
+  .live-matches{ margin-top:26px; }
+  .live-matches h3{ font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-faint); margin:0 0 10px; }
+  .match-row{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+  .match-row .icon{ width:34px; height:44px; flex-shrink:0; }
+  .match-row .icon svg{ width:100%; height:100%; }
+  .match-row .name{ flex:1; font-size:13.5px; }
+  .match-row .name .sn{ display:block; font-size:11px; color:var(--ink-faint); font-style:italic; }
+  .match-row .pct{ font-size:13px; color:var(--teal); font-variant-numeric:tabular-nums; }
+
+  .selections-recap{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+  .recap-pill{ font-size:11px; background:var(--bg-raise); border:1px solid var(--line); padding:4px 10px; border-radius:12px; color:var(--ink-dim); }
+  .recap-pill b{ color:var(--ink); }
+
+  .results-head{ padding:8px 2px 18px; }
+  .results-head h2{ font-size:21px; margin:0 0 4px; }
+  .results-head p{ font-size:13px; color:var(--ink-faint); margin:0; }
+
+  .result-card{ display:flex; gap:13px; padding:14px 4px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .result-rank{ width:26px; text-align:center; font-family:'Newsreader',serif; color:var(--amber); font-size:17px; padding-top:2px; flex-shrink:0;}
+  .result-icon{ width:50px; height:64px; flex-shrink:0; }
+  .result-icon svg{ width:100%; height:100%; }
+  .result-body{ flex:1; }
+  .result-body .cn{ font-size:15px; color:var(--ink); }
+  .result-body .sn{ font-size:11.5px; font-style:italic; color:var(--ink-faint); }
+  .match-bar{ height:4px; background:var(--line); border-radius:2px; margin-top:7px; overflow:hidden; }
+  .match-bar i{ display:block; height:100%; background:var(--teal); }
+  .match-pct-label{ font-size:11px; color:var(--ink-faint); margin-top:4px; }
+
+  .restart-row{ text-align:center; margin-top:22px; }
+
+  .disclaimer{
+    margin-top:26px; font-size:11.5px; color:var(--ink-faint); line-height:1.6; border-top:1px solid var(--line); padding-top:14px;
+  }
+
+  @media (max-width:360px){
+    .fact-grid{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="wordmark"><h1>Wingmark</h1><span class="dot">•</span></div>
+    <p class="tagline">A field companion for dragonfly identification</p>
+    <nav class="tabs">
+      <button data-tab="home" class="active">Home</button>
+      <button data-tab="species">Species</button>
+      <button data-tab="identify">Identify</button>
+    </nav>
+  </header>
+  <main id="main"></main>
+</div>
+
+<script>
+/* =========================================================================
+   WINGMARK — data layer
+   ========================================================================= */
+
+const REGIONS = {
+  NE:  "Northeast",
+  SE:  "Southeast",
+  MW:  "Midwest",
+  GP:  "Great Plains & South-Central",
+  SW:  "Desert Southwest",
+  MTN: "Mountain West",
+  WC:  "West Coast",
+  PNW: "Pacific Northwest",
+  CAN: "Canada & Far North"
+};
+
+// Rough state/province -> region mapping, used for geolocation + manual override.
+const STATE_REGION = {
+  "Connecticut":"NE","Massachusetts":"NE","Maine":"NE","New Hampshire":"NE","Rhode Island":"NE",
+  "Vermont":"NE","New York":"NE","New Jersey":"NE","Pennsylvania":"NE","District of Columbia":"NE",
+  "Delaware":"SE","Maryland":"SE","Virginia":"SE","West Virginia":"SE","North Carolina":"SE",
+  "South Carolina":"SE","Georgia":"SE","Florida":"SE","Alabama":"SE","Mississippi":"SE",
+  "Tennessee":"SE","Kentucky":"SE","Arkansas":"SE","Louisiana":"SE",
+  "Ohio":"MW","Michigan":"MW","Indiana":"MW","Illinois":"MW","Wisconsin":"MW","Minnesota":"MW","Iowa":"MW","Missouri":"MW",
+  "North Dakota":"GP","South Dakota":"GP","Nebraska":"GP","Kansas":"GP","Oklahoma":"GP","Texas":"GP",
+  "Arizona":"SW","New Mexico":"SW",
+  "Montana":"MTN","Wyoming":"MTN","Colorado":"MTN","Utah":"MTN","Idaho":"MTN","Nevada":"MTN",
+  "California":"WC",
+  "Oregon":"PNW","Washington":"PNW",
+  "Alaska":"CAN","Hawaii":"CAN"
+};
+
+// --- Trait vocabulary (used both for species tagging and the matcher UI) ---
+const TRAITS = {
+  eye: {
+    label: "Eye color",
+    sub: "Look at the color of the large compound eyes.",
+    options: {
+      green: "Green",
+      blue:  "Blue",
+      brown: "Brown",
+      red:   "Red or reddish",
+      gray:  "Gray"
+    }
+  },
+  thorax: {
+    label: "Thorax pattern",
+    sub: "The thorax is the 'shoulder' segment between the wings, just behind the head.",
+    options: {
+      green:          "Solid green",
+      bluepruinose:   "Powdery blue",
+      blackyellow:    "Black with yellow side stripes",
+      brownbluespots: "Brown with blue spots",
+      browntan:       "Plain brown or tan",
+      redorange:      "Red-orange",
+      blackwhite:     "Black with pale stripes",
+      graygreen:      "Gray-green",
+      ambergold:      "Amber or gold",
+      red:            "Red",
+      mottledbrown:   "Mottled brown"
+    }
+  },
+  abdomen: {
+    label: "Abdomen color & pattern",
+    sub: "The long tail segment — note the main color and any spots, rings, or stripes.",
+    options: {
+      whitepruinose:      "Chalky white",
+      bluepruinose:       "Powdery blue",
+      blackyellowspots:   "Black with yellow spots",
+      red:                "Red",
+      blackbluespots:     "Dark with blue spots",
+      brownpalerings:     "Brown with pale rings",
+      ambergold:          "Amber or gold",
+      mottledbrown:       "Mottled brown",
+      green:              "Green",
+      orangered:          "Orange-red",
+      pairedyellowspots:  "Black with paired yellow spots",
+      clubbedblackyellow: "Black/yellow banded club"
+    }
+  },
+  wing: {
+    label: "Wing pattern",
+    sub: "Check both pairs of wings for color, patches, or bands.",
+    options: {
+      clear:        "Clear / transparent",
+      darkbanded:   "Dark bands",
+      amberwash:    "Amber wash overall",
+      ambernodus:   "Small amber patch, mid-wing",
+      saddlebags:   "Large dark patch at the base",
+      brownspots:   "Small brown spots",
+      clearstigma:  "Clear, dark mark near wingtip"
+    }
+  },
+  shape: {
+    label: "Abdomen shape",
+    sub: "Look at the overall silhouette of the tail from above.",
+    options: {
+      slender: "Slender, even width",
+      clubbed: "Widens into a club at the tip",
+      swollen: "Slightly swollen near the base"
+    }
+  }
+};
+const TRAIT_ORDER = ["eye","thorax","abdomen","wing","shape"];
+
+// --- Species database -----------------------------------------------------
+// A curated, verified starter set spanning all 7 North American dragonfly
+// families and every major US region. Structured so more species can be
+// added later without changing the app.
+const SPECIES = [
+{id:"comwhi",cn:"Common Whitetail",sn:"Plathemis lydia",fam:"Libellulidae",size:"M",len:"1.7–2.0 in",regions:["NE","SE","MW","GP","SW","MTN","WC"],season:"May–Sep",tr:{eye:"brown",thorax:"browntan",abdomen:"whitepruinose",wing:"darkbanded",shape:"slender"},note:"Males have a chalky-white abdomen and dark patches near the base and middle of each wing. Females are brown with zigzag pale stripes and lack the white abdomen."},
+{id:"widski",cn:"Widow Skimmer",sn:"Libellula luctuosa",fam:"Libellulidae",size:"M",len:"1.7–2.0 in",regions:["NE","SE","MW","GP","SW"],season:"May–Aug",tr:{eye:"brown",thorax:"browntan",abdomen:"bluepruinose",wing:"darkbanded",shape:"slender"},note:"Broad dark bands cover the basal third of all four wings — more extensive than the Common Whitetail's bands. Mature males also show white wing patches beyond the dark bands."},
+{id:"twlski",cn:"Twelve-spotted Skimmer",sn:"Libellula pulchella",fam:"Libellulidae",size:"L",len:"2.0–2.4 in",regions:["NE","SE","MW","GP","SW","MTN","WC"],season:"May–Sep",tr:{eye:"brown",thorax:"browntan",abdomen:"blackyellowspots",wing:"brownspots",shape:"slender"},note:"Three brown spots per wing (12 total); mature males add white spots between them. Easily confused with the female Common Whitetail — check wing spot count."},
+{id:"fouski",cn:"Four-spotted Skimmer",sn:"Libellula quadrimaculata",fam:"Libellulidae",size:"M",len:"1.6–1.9 in",regions:["NE","MW","MTN","WC","PNW","CAN"],season:"May–Aug",tr:{eye:"brown",thorax:"browntan",abdomen:"brownpalerings",wing:"ambernodus",shape:"slender"},note:"A small amber patch at the nodus (leading-edge notch) of each wing is diagnostic. One of the few dragonflies found circumpolar across the Northern Hemisphere."},
+{id:"bludas",cn:"Blue Dasher",sn:"Pachydiplax longipennis",fam:"Libellulidae",size:"S",len:"1.0–1.3 in",regions:["NE","SE","MW","GP","SW","WC"],season:"Apr–Oct",tr:{eye:"green",thorax:"blackwhite",abdomen:"bluepruinose",wing:"clearstigma",shape:"slender"},note:"Bright green eyes atop a black-and-white striped thorax and powdery blue abdomen. One of the most frequently seen dragonflies at ponds continent-wide."},
+{id:"easpon",cn:"Eastern Pondhawk",sn:"Erythemis simplicicollis",fam:"Libellulidae",size:"M",len:"1.5–1.8 in",regions:["NE","SE","MW","GP"],season:"May–Sep",tr:{eye:"green",thorax:"green",abdomen:"green",wing:"clear",shape:"slender"},note:"Females and immatures are bright grass-green all over with black abdominal spots; mature males turn powder-blue except for a green face. Aggressive hunter, even of other dragonflies."},
+{id:"wespon",cn:"Western Pondhawk",sn:"Erythemis collocata",fam:"Libellulidae",size:"M",len:"1.4–1.7 in",regions:["SW","MTN","WC","PNW"],season:"May–Sep",tr:{eye:"green",thorax:"green",abdomen:"green",wing:"clear",shape:"slender"},note:"The western counterpart of the Eastern Pondhawk, near-identical in coloring and habits — ranges rarely overlap."},
+{id:"halpen",cn:"Halloween Pennant",sn:"Celithemis eponina",fam:"Libellulidae",size:"S",len:"1.3–1.6 in",regions:["NE","SE","MW","GP"],season:"Jun–Sep",tr:{eye:"brown",thorax:"browntan",abdomen:"blackyellowspots",wing:"amberwash",shape:"slender"},note:"Orange-amber wings crossed with dark brown bands give this species its name. Perches conspicuously on grass and shrub tips, swaying like a pennant in the wind."},
+{id:"calpen",cn:"Calico Pennant",sn:"Celithemis elisa",fam:"Libellulidae",size:"S",len:"1.0–1.3 in",regions:["NE","SE","MW"],season:"Jun–Aug",tr:{eye:"red",thorax:"blackyellow",abdomen:"red",wing:"brownspots",shape:"slender"},note:"Red (male) or yellow (female) heart-shaped spots run down the abdomen, paired with red-and-black wing spots. A small, showy pennant of open meadows near ponds."},
+{id:"blksad",cn:"Black Saddlebags",sn:"Tramea lacerata",fam:"Libellulidae",size:"L",len:"1.9–2.2 in",regions:["NE","SE","MW","GP","SW","MTN","WC"],season:"Jun–Oct",tr:{eye:"brown",thorax:"blackwhite",abdomen:"blackyellowspots",wing:"saddlebags",shape:"slender"},note:"A large dark brown-black patch at the base of each hindwing looks like a saddlebag in flight. Often seen foraging high overhead, rarely landing."},
+{id:"carsad",cn:"Carolina Saddlebags",sn:"Tramea carolina",fam:"Libellulidae",size:"L",len:"1.8–2.1 in",regions:["SE","GP"],season:"May–Oct",tr:{eye:"red",thorax:"redorange",abdomen:"red",wing:"saddlebags",shape:"slender"},note:"Like the Black Saddlebags but the whole body and the saddlebag patch are washed reddish rather than black."},
+{id:"wangli",cn:"Wandering Glider",sn:"Pantala flavescens",fam:"Libellulidae",size:"M",len:"1.7–2.0 in",regions:["NE","SE","MW","GP","SW","MTN","WC","PNW"],season:"Jun–Nov",tr:{eye:"gray",thorax:"ambergold",abdomen:"ambergold",wing:"clear",shape:"slender"},note:"Golden-amber all over with unusually broad hindwings built for nonstop soaring. Considered the most widely distributed dragonfly species on Earth; rarely perches."},
+{id:"spwgli",cn:"Spot-winged Glider",sn:"Pantala hymenaea",fam:"Libellulidae",size:"M",len:"1.7–2.0 in",regions:["SE","GP","SW","WC"],season:"Jun–Oct",tr:{eye:"brown",thorax:"browntan",abdomen:"mottledbrown",wing:"brownspots",shape:"slender"},note:"Similar habits to the Wandering Glider but with a mottled brown body and a small brown patch at the base of the hindwing."},
+{id:"flaski",cn:"Flame Skimmer",sn:"Libellula saturata",fam:"Libellulidae",size:"L",len:"2.0–2.3 in",regions:["SW","MTN","WC"],season:"Apr–Oct",tr:{eye:"red",thorax:"redorange",abdomen:"orangered",wing:"amberwash",shape:"slender"},note:"A fiery orange-red dragonfly with matching amber-washed wing bases, common at western ponds and slow streams."},
+{id:"neoski",cn:"Neon Skimmer",sn:"Libellula croceipennis",fam:"Libellulidae",size:"L",len:"2.0–2.3 in",regions:["SW"],season:"Mar–Oct",tr:{eye:"red",thorax:"redorange",abdomen:"red",wing:"amberwash",shape:"slender"},note:"Similar to the Flame Skimmer but with an even deeper, more uniform red, found around Southwest streams and pools."},
+{id:"rosski",cn:"Roseate Skimmer",sn:"Orthemis ferruginea",fam:"Libellulidae",size:"M",len:"1.7–2.0 in",regions:["SE","GP","SW"],season:"Apr–Nov",tr:{eye:"red",thorax:"redorange",abdomen:"red",wing:"clear",shape:"slender"},note:"Mature males show a distinctive rose-violet abdomen against clear wings. Common around ponds and ditches through the South."},
+{id:"grbski",cn:"Great Blue Skimmer",sn:"Libellula vibrans",fam:"Libellulidae",size:"L",len:"2.1–2.4 in",regions:["SE","NE"],season:"May–Sep",tr:{eye:"blue",thorax:"bluepruinose",abdomen:"bluepruinose",wing:"clearstigma",shape:"slender"},note:"A large, uniformly powder-blue skimmer of shaded woodland ponds and streams — noticeably bigger than other blue skimmers."},
+{id:"slaski",cn:"Slaty Skimmer",sn:"Libellula incesta",fam:"Libellulidae",size:"M",len:"1.8–2.1 in",regions:["NE","SE","MW"],season:"Jun–Sep",tr:{eye:"blue",thorax:"bluepruinose",abdomen:"bluepruinose",wing:"clearstigma",shape:"slender"},note:"Darker and slatier than other blue skimmers, almost blackish-blue, with an all-dark face. Common at ponds with abundant vegetation."},
+{id:"spaski",cn:"Spangled Skimmer",sn:"Libellula cyanea",fam:"Libellulidae",size:"M",len:"1.6–1.9 in",regions:["NE","SE","MW"],season:"May–Aug",tr:{eye:"blue",thorax:"bluepruinose",abdomen:"bluepruinose",wing:"brownspots",shape:"slender"},note:"Bright white wing stigmas stand out sharply against the powder-blue body — the clearest field mark separating it from Slaty and Great Blue Skimmers."},
+{id:"paiski",cn:"Painted Skimmer",sn:"Libellula semifasciata",fam:"Libellulidae",size:"M",len:"1.6–1.9 in",regions:["NE","SE","MW"],season:"Apr–Aug",tr:{eye:"brown",thorax:"browntan",abdomen:"brownpalerings",wing:"amberwash",shape:"slender"},note:"Amber patches at the wing base and nodus give a painted look against an otherwise plain brown body. Often found at shaded woodland ponds."},
+{id:"golski",cn:"Golden-winged Skimmer",sn:"Libellula auripennis",fam:"Libellulidae",size:"L",len:"2.0–2.3 in",regions:["SE"],season:"May–Oct",tr:{eye:"brown",thorax:"ambergold",abdomen:"ambergold",wing:"amberwash",shape:"slender"},note:"A golden wash covers the entire wing surface, not just the base, distinguishing it from other amber-winged skimmers of the Southeast."},
+{id:"neeski",cn:"Needham's Skimmer",sn:"Libellula needhami",fam:"Libellulidae",size:"L",len:"2.0–2.2 in",regions:["SE"],season:"May–Oct",tr:{eye:"brown",thorax:"redorange",abdomen:"orangered",wing:"amberwash",shape:"slender"},note:"Nearly identical to the Golden-winged Skimmer but with a more orange-red abdomen rather than gold."},
+{id:"autmea",cn:"Autumn Meadowhawk",sn:"Sympetrum vicinum",fam:"Libellulidae",size:"S",len:"1.0–1.3 in",regions:["NE","SE","MW"],season:"Aug–Nov",tr:{eye:"brown",thorax:"red",abdomen:"red",wing:"clear",shape:"slender"},note:"Small and bright red with pale yellowish legs (most meadowhawks have black legs). Flies later into fall than almost any other dragonfly."},
+{id:"varmea",cn:"Variegated Meadowhawk",sn:"Sympetrum corruptum",fam:"Libellulidae",size:"S",len:"1.2–1.5 in",regions:["MW","GP","SW","MTN","WC","PNW"],season:"Mar–Nov",tr:{eye:"brown",thorax:"mottledbrown",abdomen:"mottledbrown",wing:"clear",shape:"slender"},note:"A mottled patchwork of brown, red, and cream rather than a solid color — a strong long-distance migrant common across the West."},
+{id:"whfmea",cn:"White-faced Meadowhawk",sn:"Sympetrum obtrusum",fam:"Libellulidae",size:"S",len:"1.1–1.4 in",regions:["NE","MW","MTN","CAN"],season:"Jun–Oct",tr:{eye:"brown",thorax:"red",abdomen:"red",wing:"clear",shape:"slender"},note:"A bright white face set against a red body is the giveaway — visible even at a distance."},
+{id:"banmea",cn:"Band-winged Meadowhawk",sn:"Sympetrum semicinctum",fam:"Libellulidae",size:"S",len:"1.1–1.4 in",regions:["NE","SE","MW","GP","MTN","WC"],season:"Jun–Oct",tr:{eye:"brown",thorax:"red",abdomen:"red",wing:"ambernodus",shape:"slender"},note:"A small amber patch at the base of each wing sets this red meadowhawk apart from its clear-winged relatives."},
+{id:"easamb",cn:"Eastern Amberwing",sn:"Perithemis tenera",fam:"Libellulidae",size:"S",len:"0.8–1.0 in",regions:["NE","SE","MW","GP"],season:"May–Sep",tr:{eye:"brown",thorax:"browntan",abdomen:"ambergold",wing:"amberwash",shape:"slender"},note:"One of the smallest North American dragonflies. Entirely amber wings and a wasp-like flight help it mimic a stinging insect for protection."},
+{id:"comgda",cn:"Common Green Darner",sn:"Anax junius",fam:"Aeshnidae",size:"XL",len:"2.8–3.1 in",regions:["NE","SE","MW","GP","SW","MTN","WC","PNW","CAN"],season:"Feb–Nov",tr:{eye:"blue",thorax:"green",abdomen:"bluepruinose",wing:"clear",shape:"slender"},note:"A bright green thorax paired with a blue abdomen (males) and a black 'bullseye' target mark on the face. One of the most abundant darners, famous for mass fall migrations."},
+{id:"comdar",cn:"Comet Darner",sn:"Anax longipes",fam:"Aeshnidae",size:"XL",len:"3.0–3.3 in",regions:["SE","GP"],season:"Apr–Oct",tr:{eye:"blue",thorax:"green",abdomen:"red",wing:"clear",shape:"slender"},note:"A green thorax with a fire-engine-red abdomen makes mature males unmistakable — a fast, powerful flier of open ponds."},
+{id:"blueda",cn:"Blue-eyed Darner",sn:"Rhionaeschna multicolor",fam:"Aeshnidae",size:"L",len:"2.4–2.7 in",regions:["SW","MTN","WC","PNW","GP"],season:"Apr–Nov",tr:{eye:"blue",thorax:"brownbluespots",abdomen:"blackbluespots",wing:"clear",shape:"slender"},note:"Vivid sky-blue eyes and blue-spotted body make this the most commonly seen darner across much of the West."},
+{id:"shadar",cn:"Shadow Darner",sn:"Aeshna umbrosa",fam:"Aeshnidae",size:"L",len:"2.5–2.8 in",regions:["NE","MW","PNW","CAN"],season:"Jul–Nov",tr:{eye:"brown",thorax:"browntan",abdomen:"blackbluespots",wing:"clear",shape:"slender"},note:"Flies later into fall than most darners, often patrolling shaded woodland streams right up to dusk."},
+{id:"candar",cn:"Canada Darner",sn:"Aeshna canadensis",fam:"Aeshnidae",size:"L",len:"2.4–2.7 in",regions:["NE","MW","MTN","PNW","CAN"],season:"Jun–Oct",tr:{eye:"brown",thorax:"brownbluespots",abdomen:"blackbluespots",wing:"clear",shape:"slender"},note:"A widespread northern darner of bogs and lakes; close relatives require in-hand examination, but range and habitat narrow it down well."},
+{id:"lantda",cn:"Lance-tipped Darner",sn:"Aeshna constricta",fam:"Aeshnidae",size:"L",len:"2.4–2.7 in",regions:["NE","SE","MW","GP","MTN"],season:"Jul–Oct",tr:{eye:"brown",thorax:"brownbluespots",abdomen:"blackbluespots",wing:"clear",shape:"slender"},note:"A meadow-and-marsh darner, often seen well away from water hunting over fields in late summer."},
+{id:"swadar",cn:"Swamp Darner",sn:"Epiaeschna heros",fam:"Aeshnidae",size:"XL",len:"3.1–3.4 in",regions:["NE","SE","MW"],season:"Apr–Sep",tr:{eye:"brown",thorax:"green",abdomen:"brownpalerings",wing:"clear",shape:"slender"},note:"One of the largest US dragonflies, with thin pale-green rings circling a dark abdomen. Forages over forest clearings, often far from water."},
+{id:"sprdar",cn:"Springtime Darner",sn:"Basiaeschna janata",fam:"Aeshnidae",size:"M",len:"2.2–2.5 in",regions:["NE","SE","MW"],season:"Apr–Jun",tr:{eye:"brown",thorax:"brownbluespots",abdomen:"blackbluespots",wing:"clear",shape:"slender"},note:"The earliest darner of the year, on the wing well before most other Aeshnidae emerge."},
+{id:"caldar",cn:"California Darner",sn:"Rhionaeschna californica",fam:"Aeshnidae",size:"M",len:"2.0–2.3 in",regions:["WC","MTN","PNW"],season:"Mar–Jul",tr:{eye:"blue",thorax:"brownbluespots",abdomen:"blackbluespots",wing:"clear",shape:"slender"},note:"A small, early-season western darner, often the first Aeshnidae seen each spring on the coast."},
+{id:"giadar",cn:"Giant Darner",sn:"Anax walsinghami",fam:"Aeshnidae",size:"XL",len:"3.3–3.6 in",regions:["SW","WC"],season:"May–Nov",tr:{eye:"blue",thorax:"green",abdomen:"blackbluespots",wing:"clear",shape:"slender"},note:"The longest dragonfly in North America, patrolling desert streams and canyons of the Southwest."},
+{id:"regdar",cn:"Regal Darner",sn:"Coryphaeschna ingens",fam:"Aeshnidae",size:"XL",len:"3.0–3.3 in",regions:["SE","GP"],season:"Apr–Oct",tr:{eye:"brown",thorax:"green",abdomen:"blackbluespots",wing:"clear",shape:"slender"},note:"A large, dark, fast-flying darner of southern swamps and wooded ponds, often seen at dusk."},
+{id:"draghu",cn:"Dragonhunter",sn:"Hagenius brevistylus",fam:"Gomphidae",size:"XL",len:"3.1–3.4 in",regions:["NE","SE","MW"],season:"May–Sep",tr:{eye:"green",thorax:"blackyellow",abdomen:"blackyellowspots",wing:"clear",shape:"clubbed"},note:"The largest and most powerful clubtail, capable of preying on other dragonflies — even other Dragonhunters. Note the thick, boldly ringed club."},
+{id:"comsan",cn:"Common Sanddragon",sn:"Progomphus obscurus",fam:"Gomphidae",size:"M",len:"1.9–2.2 in",regions:["NE","SE","MW"],season:"May–Aug",tr:{eye:"green",thorax:"browntan",abdomen:"clubbedblackyellow",wing:"clear",shape:"clubbed"},note:"A tan, sand-colored clubtail found perching directly on open sandy banks of rivers and streams."},
+{id:"easrin",cn:"Eastern Ringtail",sn:"Erpetogomphus designatus",fam:"Gomphidae",size:"M",len:"1.9–2.2 in",regions:["SE","GP","SW"],season:"May–Sep",tr:{eye:"green",thorax:"green",abdomen:"clubbedblackyellow",wing:"clear",shape:"clubbed"},note:"Bright green eyes atop a yellow-ringed black club, found along rocky rivers of the south-central states."},
+{id:"ashclu",cn:"Ashy Clubtail",sn:"Phanogomphus lividus",fam:"Gomphidae",size:"M",len:"1.7–2.0 in",regions:["NE","SE","MW"],season:"Apr–Jul",tr:{eye:"gray",thorax:"graygreen",abdomen:"clubbedblackyellow",wing:"clear",shape:"clubbed"},note:"A pale gray-eyed, gray-green clubtail of the early season, often perching on streamside rocks and logs."},
+{id:"midclu",cn:"Midland Clubtail",sn:"Phanogomphus fraternus",fam:"Gomphidae",size:"M",len:"1.6–1.9 in",regions:["MW","GP"],season:"May–Jul",tr:{eye:"green",thorax:"browntan",abdomen:"clubbedblackyellow",wing:"clear",shape:"clubbed"},note:"Often emerges in large synchronized numbers along Midwest rivers, then disperses quickly."},
+{id:"proclu",cn:"Pronghorn Clubtail",sn:"Gomphus graslinellus",fam:"Gomphidae",size:"M",len:"1.7–2.0 in",regions:["MW","GP"],season:"Jun–Aug",tr:{eye:"green",thorax:"blackyellow",abdomen:"clubbedblackyellow",wing:"clear",shape:"clubbed"},note:"A prairie-region clubtail named for small paired horn-like projections at the tip of the abdomen (visible up close)."},
+{id:"pacclu",cn:"Pacific Clubtail",sn:"Gomphus kurilis",fam:"Gomphidae",size:"M",len:"1.7–2.0 in",regions:["WC"],season:"Apr–Jul",tr:{eye:"green",thorax:"blackyellow",abdomen:"clubbedblackyellow",wing:"clear",shape:"clubbed"},note:"One of the few clubtails found along the California coast, active in spring at ponds and slow streams."},
+{id:"ameeme",cn:"American Emerald",sn:"Cordulia shurtleffii",fam:"Corduliidae",size:"M",len:"1.7–2.0 in",regions:["NE","MW","MTN","PNW","CAN"],season:"May–Aug",tr:{eye:"green",thorax:"green",abdomen:"green",wing:"clear",shape:"swollen"},note:"Brilliant metallic-green eyes and body, patrolling northern bog and lake edges. The abdomen is subtly swollen just behind the thorax."},
+{id:"racem",cn:"Racket-tailed Emerald",sn:"Dorocordulia libera",fam:"Corduliidae",size:"S",len:"1.3–1.6 in",regions:["NE","MW","CAN"],season:"Jun–Aug",tr:{eye:"green",thorax:"green",abdomen:"green",wing:"clear",shape:"swollen"},note:"A small emerald with a distinctly paddle- or racket-shaped tip to the abdomen, visible even in flight."},
+{id:"combas",cn:"Common Baskettail",sn:"Epitheca cynosura",fam:"Corduliidae",size:"M",len:"1.5–1.8 in",regions:["NE","SE","MW"],season:"Mar–Jun",tr:{eye:"green",thorax:"browntan",abdomen:"brownpalerings",wing:"clear",shape:"swollen"},note:"One of the earliest dragonflies of spring, often seen swarming in large numbers over parking lots and clearings well before other species emerge."},
+{id:"prbask",cn:"Prince Baskettail",sn:"Epitheca princeps",fam:"Corduliidae",size:"L",len:"2.2–2.5 in",regions:["NE","SE","MW","GP"],season:"May–Sep",tr:{eye:"green",thorax:"browntan",abdomen:"brownpalerings",wing:"brownspots",shape:"swollen"},note:"A large baskettail that patrols ceaselessly back and forth over open water, rarely landing long enough for a close look."},
+{id:"strcru",cn:"Stream Cruiser",sn:"Didymops transversa",fam:"Macromiidae",size:"M",len:"2.0–2.3 in",regions:["NE","SE","MW"],season:"Apr–Jun",tr:{eye:"brown",thorax:"browntan",abdomen:"brownpalerings",wing:"clear",shape:"slender"},note:"An early-season cruiser patrolling wooded streams, brown overall with pale yellow thoracic markings."},
+{id:"swrcru",cn:"Swift River Cruiser",sn:"Macromia illinoiensis",fam:"Macromiidae",size:"L",len:"2.4–2.7 in",regions:["NE","SE","MW"],season:"Jun–Sep",tr:{eye:"green",thorax:"blackyellow",abdomen:"blackyellowspots",wing:"clear",shape:"slender"},note:"A dark, metallic-bodied cruiser with a bright yellow ring near the base of the abdomen, flying fast and low over rivers."},
+{id:"twispi",cn:"Twin-spotted Spiketail",sn:"Cordulegaster maculata",fam:"Cordulegastridae",size:"L",len:"2.5–2.8 in",regions:["NE","SE","MW"],season:"May–Jul",tr:{eye:"green",thorax:"blackyellow",abdomen:"pairedyellowspots",wing:"clear",shape:"slender"},note:"Paired yellow spots run down a black abdomen, one pair per segment. Patrols small, spring-fed forest streams, rarely straying far."},
+{id:"pacspi",cn:"Pacific Spiketail",sn:"Cordulegaster dorsalis",fam:"Cordulegastridae",size:"L",len:"2.6–2.9 in",regions:["WC","MTN","PNW"],season:"May–Aug",tr:{eye:"green",thorax:"blackyellow",abdomen:"pairedyellowspots",wing:"clear",shape:"slender"},note:"The western counterpart of the Twin-spotted Spiketail, found along small mountain and foothill streams."},
+{id:"grapet",cn:"Gray Petaltail",sn:"Tachopteryx thoreyi",fam:"Petaluridae",size:"XL",len:"2.8–3.1 in",regions:["NE","SE"],season:"May–Jul",tr:{eye:"gray",thorax:"graygreen",abdomen:"mottledbrown",wing:"clear",shape:"slender"},note:"A living relict of an ancient dragonfly lineage. Gray-brown and mottled, it often perches flat on tree trunks — or even lands on people — near forest seeps."}
+];
+
+const FAMILIES = {
+  "Libellulidae": "Skimmers",
+  "Aeshnidae": "Darners",
+  "Gomphidae": "Clubtails",
+  "Corduliidae": "Emeralds",
+  "Macromiidae": "Cruisers",
+  "Cordulegastridae": "Spiketails",
+  "Petaluridae": "Petaltails"
+};
+
+/* =========================================================================
+   SVG ICON GENERATOR — every species / trait visual is built from this,
+   so appearance always reflects the actual coded field marks.
+   ========================================================================= */
+
+const EYE_COLOR   = {green:"#4a8f5c", blue:"#4a86c9", brown:"#7a5230", red:"#b5443a", gray:"#93998f"};
+const THORAX_FILL = {green:"#3f7d4a", bluepruinose:"#6f9dbd", blackyellow:"#232323", brownbluespots:"#6b5133", browntan:"#8a6d4b", redorange:"#c9622f", blackwhite:"#232323", graygreen:"#818f7b", ambergold:"#d99a3d", red:"#b23a30", mottledbrown:"#7a5f3f"};
+const ABD_FILL    = {whitepruinose:"#e7e4da", bluepruinose:"#6f9dbd", blackyellowspots:"#232323", red:"#b23a30", blackbluespots:"#2b241c", brownpalerings:"#6b5133", ambergold:"#d99a3d", mottledbrown:"#7a5f3f", green:"#4f8a5b", orangered:"#d1592f", pairedyellowspots:"#1f1f1f", clubbedblackyellow:"#232323"};
+
+const SHAPE_PROFILE = {
+  slender: [1.00,0.90,0.82,0.74,0.67,0.61,0.56,0.51,0.47,0.43,0.40,0.37,0.34],
+  clubbed: [1.00,0.82,0.68,0.58,0.52,0.47,0.44,0.42,0.42,0.48,0.66,0.90,1.05],
+  swollen: [0.72,0.92,1.00,0.90,0.80,0.70,0.62,0.55,0.49,0.44,0.40,0.36,0.32]
+};
+
+function abdomenPath(shape){
+  const profile = SHAPE_PROFILE[shape] || SHAPE_PROFILE.slender;
+  const maxW = 24, top = 118, totalLen = 230, segLen = totalLen/12;
+  let left = [], right = [];
+  for(let i=0;i<=12;i++){
+    const y = top + i*segLen;
+    const w = (profile[i]*maxW)/2;
+    left.push([120-w, y]);
+    right.push([120+w, y]);
+  }
+  let d = `M ${left[0][0]} ${left[0][1]} `;
+  left.forEach(p => d += `L ${p[0]} ${p[1]} `);
+  d += `L ${right[12][0]} ${right[12][1]} `;
+  for(let i=11;i>=0;i--) d += `L ${right[i][0]} ${right[i][1]} `;
+  d += "Z";
+  return {d, top, segLen, maxW};
+}
+
+function abdomenOverlay(pattern, geo){
+  const {top, segLen} = geo;
+  let out = "";
+  const spotSeg = (i, color, rx=3.6, dx=6.5) => {
+    const y = top + (i+0.55)*segLen;
+    out += `<ellipse cx="${120-dx}" cy="${y}" rx="${rx}" ry="${rx*0.8}" fill="${color}"/>`;
+    out += `<ellipse cx="${120+dx}" cy="${y}" rx="${rx}" ry="${rx*0.8}" fill="${color}"/>`;
+  };
+  const ring = (i, color, h=3.2) => {
+    const y = top + i*segLen;
+    out += `<rect x="98" y="${y-h/2}" width="44" height="${h}" fill="${color}" opacity=".8"/>`;
+  };
+  if(pattern === "blackyellowspots" || pattern === "pairedyellowspots"){
+    for(let i=1;i<10;i+=1) spotSeg(i, "#e8c34d", pattern==="pairedyellowspots"?2.6:3.4, pattern==="pairedyellowspots"?4.5:7);
+  } else if(pattern === "blackbluespots"){
+    for(let i=1;i<10;i+=1) spotSeg(i, "#5b86b5");
+  } else if(pattern === "brownpalerings"){
+    for(let i=1;i<12;i+=2) ring(i, "#d8c9a3");
+  } else if(pattern === "clubbedblackyellow"){
+    for(let i=1;i<13;i+=2) ring(i, "#e8c34d", 6);
+  } else if(pattern === "mottledbrown"){
+    for(let i=0;i<12;i+=2){
+      const y = top + i*segLen;
+      out += `<rect x="99" y="${y}" width="42" height="${segLen*0.7}" fill="#5c4429" opacity=".45"/>`;
+    }
+  }
+  // segment divider lines for texture on every abdomen
+  for(let i=1;i<12;i++){
+    const y = top + i*segLen;
+    out += `<line x1="99" y1="${y}" x2="141" y2="${y}" stroke="#00000022" stroke-width="1"/>`;
+  }
+  return out;
+}
+
+function thoraxOverlay(pattern){
+  let out = "";
+  if(pattern === "blackyellow"){
+    out += `<rect x="99" y="58" width="8" height="55" fill="#e8c34d"/><rect x="133" y="58" width="8" height="55" fill="#e8c34d"/>`;
+  } else if(pattern === "blackwhite"){
+    out += `<rect x="99" y="58" width="8" height="55" fill="#d8d6c9"/><rect x="133" y="58" width="8" height="55" fill="#d8d6c9"/>`;
+  } else if(pattern === "brownbluespots"){
+    out += `<ellipse cx="103" cy="80" rx="6" ry="10" fill="#5b86b5"/><ellipse cx="137" cy="80" rx="6" ry="10" fill="#5b86b5"/>`;
+  }
+  return out;
+}
+
+function wingLocal(pattern){
+  // local coords: attachment at (0,0), tip at (140,0)
+  const amber = pattern === "amberwash";
+  const base = `<path d="M0,-3 C40,-16 95,-15 138,-4 C140,0 140,0 138,4 C95,15 40,16 0,3 Z" fill="${amber?"#e3b46a":"#e7edee"}" opacity="${amber?0.68:0.55}" stroke="#c9d3d3" stroke-width="0.6"/>
+              <line x1="8" y1="0" x2="132" y2="0" stroke="#b9c3c1" stroke-width="0.6"/>
+              <line x1="30" y1="-8" x2="55" y2="8" stroke="#c4cecc" stroke-width="0.5"/>
+              <line x1="60" y1="-9" x2="85" y2="9" stroke="#c4cecc" stroke-width="0.5"/>`;
+  let overlay = "";
+  if(pattern === "darkbanded"){
+    overlay += `<rect x="12" y="-10" width="20" height="20" fill="#2c2620" opacity=".85"/><rect x="52" y="-8" width="15" height="16" fill="#2c2620" opacity=".75"/>`;
+  } else if(pattern === "saddlebags"){
+    overlay += `<path d="M2,-11 C18,-16 34,-15 40,0 C34,15 18,16 2,11 Z" fill="#2a2119" opacity=".92"/>`;
+  } else if(pattern === "ambernodus"){
+    overlay += `<circle cx="62" cy="0" r="8" fill="#dfa24a" opacity=".85"/>`;
+  } else if(pattern === "brownspots"){
+    overlay += `<circle cx="42" cy="0" r="4.5" fill="#5c4429" opacity=".8"/><circle cx="82" cy="0" r="4.5" fill="#5c4429" opacity=".8"/>`;
+  }
+  // wingtip stigma mark, present on nearly all real dragonflies
+  overlay += `<rect x="116" y="-4.5" width="11" height="5.5" rx="1" fill="#3a332a" opacity=".8"/>`;
+  return base + overlay;
+}
+
+function dragonflyIcon(tr, opts){
+  opts = opts || {};
+  const eyeC = EYE_COLOR[tr.eye] || "#7a5230";
+  const thoraxC = THORAX_FILL[tr.thorax] || "#8a6d4b";
+  const abdC = ABD_FILL[tr.abdomen] || "#6b5133";
+  const {d: abdPath, ...geo} = abdomenPath(tr.shape);
+  const wingContent = wingLocal(tr.wing);
+  const bg = opts.bg !== false;
+
+  return `<svg viewBox="0 0 240 380" xmlns="http://www.w3.org/2000/svg">
+    ${bg ? `<rect x="0" y="0" width="240" height="380" fill="none"/>` : ""}
+    <g opacity=".97">
+      <!-- hindwings (drawn first, further back) -->
+      <g transform="translate(96,98) rotate(172)">${wingContent}</g>
+      <g transform="translate(144,98) rotate(8)">${wingContent}</g>
+      <!-- forewings -->
+      <g transform="translate(100,74) rotate(197)">${wingContent}</g>
+      <g transform="translate(140,74) rotate(-17)">${wingContent}</g>
+      <!-- abdomen -->
+      <path d="${abdPath}" fill="${abdC}" stroke="#00000030" stroke-width="1"/>
+      ${abdomenOverlay(tr.abdomen, geo)}
+      <!-- thorax -->
+      <rect x="97" y="58" width="46" height="56" rx="14" fill="${thoraxC}" stroke="#00000030" stroke-width="1"/>
+      ${thoraxOverlay(tr.thorax)}
+      <!-- head -->
+      <circle cx="120" cy="42" r="21" fill="#2a241d"/>
+      <ellipse cx="106" cy="34" rx="13" ry="15" fill="${eyeC}"/>
+      <ellipse cx="134" cy="34" rx="13" ry="15" fill="${eyeC}"/>
+      <ellipse cx="102" cy="30" rx="4" ry="5" fill="#ffffff" opacity=".25"/>
+      <ellipse cx="130" cy="30" rx="4" ry="5" fill="#ffffff" opacity=".25"/>
+    </g>
+  </svg>`;
+}
+
+// Icon for a single trait value shown against a muted default body (used in the matcher)
+function traitIcon(part, value){
+  const base = {eye:"brown", thorax:"browntan", abdomen:"brownpalerings", wing:"clear", shape:"slender"};
+  base[part] = value;
+  return dragonflyIcon(base);
+}
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+
+const state = {
+  tab: "home",
+  region: null,        // region code
+  regionSource: null,  // "geo" | "manual" | null
+  regionLabelDetail: null, // e.g. "Delaware"
+  speciesQuery: "",
+  speciesFamilyFilter: null,
+  matcher: {
+    stepIndex: 0,
+    picks: {},          // part -> value or "skip"
+    cardOffset: 0        // which option index is centered per step
+  },
+  matcherPhase: "intro", // intro | quiz | results
+  openSpeciesId: null
+};
+
+function speciesInRegion(regionCode){
+  if(!regionCode) return SPECIES;
+  return SPECIES.filter(s => s.regions.includes(regionCode));
+}
+
+/* =========================================================================
+   RENDER — HOME
+   ========================================================================= */
+
+function renderHome(){
+  const list = speciesInRegion(state.region);
+  const famCounts = {};
+  list.forEach(s => famCounts[s.fam] = (famCounts[s.fam]||0)+1);
+  const famRows = Object.keys(FAMILIES).map(fam => {
+    const n = famCounts[fam] || 0;
+    if(n === 0) return "";
+    return `<div class="fam-row"><span class="cname">${FAMILIES[fam]} <span class="sname">${fam}</span></span><span class="count">${n}</span></div>`;
+  }).join("");
+
+  return `
+    ${locationBar()}
+    <div class="hero">
+      <h2>Match what you're seeing, one body part at a time.</h2>
+      <p>Wingmark narrows down a sighting by comparing eye color, thorax pattern, abdomen markings, wings, and body shape against species known to occur near you.</p>
+      <div class="hero-actions">
+        <button class="btn" onclick="goTab('identify')">Start identifying</button>
+        <button class="btn ghost" onclick="goTab('species')">Browse species</button>
+      </div>
+    </div>
+    <div class="stat-strip">
+      <div class="stat"><span class="n">${list.length}</span><span class="l">Species&nbsp;nearby</span></div>
+      <div class="stat"><span class="n">${Object.keys(famCounts).length}</span><span class="l">Families</span></div>
+      <div class="stat"><span class="n">${SPECIES.length}</span><span class="l">In full guide</span></div>
+    </div>
+    <div class="family-list">
+      <h3>Families in this region</h3>
+      ${famRows || `<p class="empty-note">No matches for this region yet.</p>`}
+    </div>
+    <p class="disclaimer">Field marks and illustrations here are a starter reference set, simplified to highlight the traits that matter most for a quick ID — not photographic likenesses. For confusing or rare species, confirm against a photo field guide before logging a sighting.</p>
+  `;
+}
+
+/* =========================================================================
+   RENDER — LOCATION BAR (shared)
+   ========================================================================= */
+
+function locationBar(){
+  const label = state.region
+    ? (state.regionLabelDetail ? `${state.regionLabelDetail} · ${REGIONS[state.region]}` : REGIONS[state.region])
+    : "Location not set";
+  const options = Object.keys(REGIONS).map(r => `<option value="${r}" ${state.region===r?"selected":""}>${REGIONS[r]}</option>`).join("");
+  return `
+    <div class="loc-row">
+      <div class="loc-badge"><span class="loc-dot"></span><span>${state.region ? "<b>"+label+"</b>" : label}</span></div>
+      ${state.region ? "" : `<button class="btn small amber" onclick="requestGeolocation()">Use my location</button>`}
+    </div>
+    <div class="loc-row" style="margin-top:-8px;">
+      <select id="regionOverride" onchange="setManualRegion(this.value)" style="flex:1;">
+        <option value="">Choose region manually…</option>
+        ${options}
+      </select>
+    </div>
+  `;
+}
+
+function requestGeolocation(){
+  if(!navigator.geolocation){
+    alert("Geolocation isn't available in this browser. Choose your region manually below.");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try{
+      const {latitude, longitude} = pos.coords;
+      const resp = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+      const data = await resp.json();
+      const stateName = data.principalSubdivision || "";
+      const region = STATE_REGION[stateName] || null;
+      if(region){
+        state.region = region;
+        state.regionSource = "geo";
+        state.regionLabelDetail = stateName;
+      } else {
+        alert("Detected your location but couldn't map it to a supported region yet — please choose one manually.");
+      }
+    } catch(e){
+      alert("Couldn't reach the location service. Choose your region manually below.");
+    }
+    render();
+  }, err => {
+    alert("Location permission was denied. Choose your region manually below.");
+  }, {timeout: 8000});
+}
+
+function setManualRegion(code){
+  if(!code) return;
+  state.region = code;
+  state.regionSource = "manual";
+  state.regionLabelDetail = null;
+  render();
+}
+
+/* =========================================================================
+   RENDER — SPECIES LIST + DETAIL
+   ========================================================================= */
+
+function renderSpecies(){
+  let list = speciesInRegion(state.region);
+  if(state.speciesFamilyFilter) list = list.filter(s => s.fam === state.speciesFamilyFilter);
+  const q = state.speciesQuery.trim().toLowerCase();
+  if(q) list = list.filter(s => s.cn.toLowerCase().includes(q) || s.sn.toLowerCase().includes(q));
+
+  const famsPresent = [...new Set(speciesInRegion(state.region).map(s=>s.fam))];
+  const chips = famsPresent.map(f => `<button class="chip ${state.speciesFamilyFilter===f?"active":""}" onclick="toggleFamilyFilter('${f}')">${FAMILIES[f]}</button>`).join("");
+
+  const rows = list.map(s => `
+    <div class="sp-card" onclick="openSpecies('${s.id}')">
+      <div class="sp-icon">${dragonflyIcon(s.tr)}</div>
+      <div class="sp-info">
+        <div class="cn">${s.cn}</div>
+        <div class="sn">${s.sn}</div>
+        <div class="sp-meta"><span class="tag">${FAMILIES[s.fam]}</span><span class="tag">${s.len}</span></div>
+      </div>
+    </div>
+  `).join("");
+
+  return `
+    ${locationBar()}
+    <div class="search-bar">
+      <input id="speciesSearch" placeholder="Search species…" value="${state.speciesQuery}" oninput="onSpeciesSearch(this.value)">
+    </div>
+    <div class="filter-chips">${chips}</div>
+    ${rows || `<p class="empty-note">No species match this filter.</p>`}
+    ${state.openSpeciesId ? speciesSheet(state.openSpeciesId) : ""}
+  `;
+}
+
+function toggleFamilyFilter(fam){
+  state.speciesFamilyFilter = state.speciesFamilyFilter === fam ? null : fam;
+  render();
+}
+function onSpeciesSearch(v){
+  state.speciesQuery = v;
+  render(true);
+}
+function openSpecies(id){ state.openSpeciesId = id; render(); }
+function closeSpecies(){ state.openSpeciesId = null; render(); }
+
+function speciesSheet(id){
+  const s = SPECIES.find(x => x.id === id);
+  if(!s) return "";
+  const traitFacts = TRAIT_ORDER.map(part => `
+    <div class="fact"><div class="k">${TRAITS[part].label}</div><div class="v">${TRAITS[part].options[s.tr[part]]}</div></div>
+  `).join("");
+  return `
+    <div class="sheet-overlay" onclick="if(event.target===this) closeSpecies()">
+      <div class="sheet">
+        <button class="close-x" onclick="closeSpecies()">✕</button>
+        <div class="grabber"></div>
+        <div class="sheet-header">
+          <div class="sheet-icon">${dragonflyIcon(s.tr)}</div>
+          <div>
+            <h2>${s.cn}</h2>
+            <div class="sn">${s.sn}</div>
+            <div class="sheet-badges">
+              <span class="tag">${FAMILIES[s.fam]}</span>
+              <span class="tag">${s.len}</span>
+              <span class="tag">${s.season}</span>
+            </div>
+          </div>
+        </div>
+        <div class="fact-grid">${traitFacts}</div>
+        <div class="note-block"><span class="lbl">Field notes</span>${s.note}</div>
+      </div>
+    </div>
+  `;
+}
+
+/* =========================================================================
+   RENDER — IDENTIFY (MATCHER)
+   ========================================================================= */
+
+function resetMatcher(){
+  state.matcher = {stepIndex:0, picks:{}, cardOffset:0};
+  state.matcherPhase = "intro";
+}
+
+function renderIdentify(){
+  if(state.matcherPhase === "intro") return renderMatcherIntro();
+  if(state.matcherPhase === "quiz") return renderMatcherQuiz();
+  return renderMatcherResults();
+}
+
+function renderMatcherIntro(){
+  const pool = speciesInRegion(state.region);
+  return `
+    ${locationBar()}
+    <div class="matcher-intro">
+      <h2>Build a match</h2>
+      <p>Answer up to five quick questions about the dragonfly you're looking at. You can skip anything you're unsure of — matches will still update from what you do know.</p>
+      <button class="btn amber" onclick="startMatcher()">Begin (${pool.length} candidates in region)</button>
+    </div>
+  `;
+}
+
+function startMatcher(){
+  resetMatcher();
+  state.matcherPhase = "quiz";
+  render();
+}
+
+function currentPool(){
+  return speciesInRegion(state.region);
+}
+
+function scoreSpecies(sp, picks){
+  let matched = 0, considered = 0;
+  TRAIT_ORDER.forEach(part => {
+    const pick = picks[part];
+    if(!pick || pick === "skip") return;
+    considered++;
+    if(sp.tr[part] === pick) matched++;
+  });
+  return {matched, considered, pct: considered ? Math.round((matched/considered)*100) : null};
+}
+
+function liveRanked(){
+  const picks = state.matcher.picks;
+  const anyPick = Object.values(picks).some(v => v && v !== "skip");
+  const pool = currentPool();
+  if(!anyPick) return pool.slice(0, 5).map(sp => ({sp, score:{matched:0,considered:0,pct:null}}));
+  return pool.map(sp => ({sp, score: scoreSpecies(sp, picks)}))
+    .sort((a,b) => (b.score.pct||0) - (a.score.pct||0) || (b.score.matched - a.score.matched))
+    .slice(0,5);
+}
+
+function renderMatcherQuiz(){
+  const idx = state.matcher.stepIndex;
+  const part = TRAIT_ORDER[idx];
+  const info = TRAITS[part];
+  const optKeys = Object.keys(info.options);
+  const offset = state.matcher.cardOffset;
+  const value = optKeys[offset];
+
+  const segs = TRAIT_ORDER.map((p,i) => `<div class="seg ${i<idx?"done":i===idx?"now":""}"></div>`).join("");
+
+  const ranked = liveRanked();
+  const liveRows = ranked.map(({sp,score}) => `
+    <div class="match-row" onclick="openSpecies('${sp.id}'); goTab('species');">
+      <div class="icon">${dragonflyIcon(sp.tr)}</div>
+      <div class="name">${sp.cn}<span class="sn">${sp.sn}</span></div>
+      <div class="pct">${score.pct===null?"—":score.pct+"%"}</div>
+    </div>
+  `).join("");
+
+  const recap = TRAIT_ORDER.slice(0, idx).map(p => {
+    const v = state.matcher.picks[p];
+    const label = v && v !== "skip" ? TRAITS[p].options[v] : "Skipped";
+    return `<span class="recap-pill">${TRAITS[p].label}: <b>${label}</b></span>`;
+  }).join("");
+
+  return `
+    <div class="progress-row">${segs}</div>
+    <div class="step-label"><span>Step ${idx+1} of ${TRAIT_ORDER.length}</span><span>${info.label}</span></div>
+    ${recap ? `<div class="selections-recap">${recap}</div>` : ""}
+    <p class="step-question">${info.label}?</p>
+    <p class="step-sub">${info.sub}</p>
+
+    <div class="swipe-stage">
+      <div class="swipe-card" id="swipeCard">
+        <div class="icon-wrap">${traitIcon(part, value)}</div>
+        <div class="trait-name">${info.options[value]}</div>
+        <div class="trait-hint">${offset+1} of ${optKeys.length} options — swipe or use the arrows</div>
+      </div>
+    </div>
+
+    <div class="swipe-nav">
+      <button class="nav-arrow" onclick="cycleOption(-1)">‹</button>
+      <button class="pick-btn" onclick="pickOption('${part}', '${value}')">This looks right</button>
+      <button class="nav-arrow" onclick="cycleOption(1)">›</button>
+    </div>
+    <div class="skip-row"><button onclick="skipStep()">Not sure — skip this trait</button></div>
+
+    <div class="live-matches">
+      <h3>Closest matches so far</h3>
+      ${liveRows}
+    </div>
+  `;
+}
+
+function cycleOption(dir){
+  const idx = state.matcher.stepIndex;
+  const part = TRAIT_ORDER[idx];
+  const optKeys = Object.keys(TRAITS[part].options);
+  let o = state.matcher.cardOffset + dir;
+  if(o < 0) o = optKeys.length - 1;
+  if(o >= optKeys.length) o = 0;
+  state.matcher.cardOffset = o;
+  render(true);
+}
+
+function advanceStep(){
+  state.matcher.cardOffset = 0;
+  if(state.matcher.stepIndex < TRAIT_ORDER.length - 1){
+    state.matcher.stepIndex++;
+    render();
+  } else {
+    state.matcherPhase = "results";
+    render();
+  }
+}
+
+function pickOption(part, value){
+  state.matcher.picks[part] = value;
+  advanceStep();
+}
+function skipStep(){
+  const part = TRAIT_ORDER[state.matcher.stepIndex];
+  state.matcher.picks[part] = "skip";
+  advanceStep();
+}
+
+function renderMatcherResults(){
+  const picks = state.matcher.picks;
+  const pool = currentPool();
+  const ranked = pool.map(sp => ({sp, score: scoreSpecies(sp, picks)}))
+    .sort((a,b) => (b.score.pct||0) - (a.score.pct||0) || (b.score.matched - a.score.matched))
+    .slice(0, 8);
+
+  const recap = TRAIT_ORDER.map(p => {
+    const v = picks[p];
+    const label = v && v !== "skip" ? TRAITS[p].options[v] : "Skipped";
+    return `<span class="recap-pill">${TRAITS[p].label}: <b>${label}</b></span>`;
+  }).join("");
+
+  const rows = ranked.map(({sp,score}, i) => `
+    <div class="result-card" onclick="openSpecies('${sp.id}'); goTab('species');">
+      <div class="result-rank">${i+1}</div>
+      <div class="result-icon">${dragonflyIcon(sp.tr)}</div>
+      <div class="result-body">
+        <div class="cn">${sp.cn}</div>
+        <div class="sn">${sp.sn}</div>
+        <div class="match-bar"><i style="width:${score.pct||0}%"></i></div>
+        <div class="match-pct-label">${score.pct===null ? "No traits selected" : score.pct+"% of selected traits match"}</div>
+      </div>
+    </div>
+  `).join("");
+
+  return `
+    <div class="results-head">
+      <h2>Likely matches</h2>
+      <p>Ranked by how many of your selected traits they share — always check size and season too.</p>
+    </div>
+    <div class="selections-recap">${recap}</div>
+    ${rows || `<p class="empty-note">No candidates in this region.</p>`}
+    <div class="restart-row"><button class="btn ghost" onclick="startMatcher()">Start over</button></div>
+    <p class="disclaimer">This tool narrows candidates from field marks you enter — it doesn't verify against a photo. For confusing look-alikes, cross-check the top matches against a photo guide before logging a sighting.</p>
+  `;
+}
+
+/* =========================================================================
+   ROUTER + RENDER LOOP
+   ========================================================================= */
+
+function goTab(tab){
+  state.tab = tab;
+  if(tab !== "identify"){ /* keep matcher state as-is when leaving */ }
+  render();
+}
+
+function render(skipScrollReset){
+  document.querySelectorAll("nav.tabs button").forEach(b => {
+    b.classList.toggle("active", b.dataset.tab === state.tab);
+  });
+  const main = document.getElementById("main");
+  let html = "";
+  if(state.tab === "home") html = renderHome();
+  else if(state.tab === "species") html = renderSpecies();
+  else if(state.tab === "identify") html = renderIdentify();
+  main.innerHTML = html;
+  if(!skipScrollReset) window.scrollTo(0,0);
+  attachSwipeHandlers();
+}
+
+function attachSwipeHandlers(){
+  const card = document.getElementById("swipeCard");
+  if(!card) return;
+  let startX = null;
+  card.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, {passive:true});
+  card.addEventListener("touchend", e => {
+    if(startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if(Math.abs(dx) > 40) cycleOption(dx < 0 ? 1 : -1);
+    startX = null;
+  }, {passive:true});
+}
+
+document.querySelectorAll("nav.tabs button").forEach(b => {
+  b.addEventListener("click", () => goTab(b.dataset.tab));
+});
+
+resetMatcher();
+render();
+</script>
+</body>
+</html>
