@@ -35,7 +35,7 @@
   }
   h1,h2,h3,.serif{ font-family:'Newsreader', serif; font-weight:500; }
   ::selection{ background:var(--teal-dim); color:var(--ink); }
-  button{ font-family:inherit; cursor:pointer; }
+  button{ font-family:inherit; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
   a{ color:var(--teal); }
 
   /* ---------- App shell ---------- */
@@ -132,12 +132,13 @@
   .filter-chips{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px; }
   .chip{
     font-size:11.5px; padding:5px 11px; border-radius:14px; border:1px solid var(--line);
-    color:var(--ink-dim); background:transparent;
+    color:var(--ink-dim); background:transparent; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
   }
   .chip.active{ background:var(--teal-dim); border-color:var(--teal-dim); color:#eafffb; }
 
   .sp-card{
     display:flex; gap:12px; padding:13px 4px; border-bottom:1px solid var(--line); cursor:pointer;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
   }
   .sp-card:active{ background:var(--bg-raise); }
   .sp-icon{ width:52px; height:66px; flex-shrink:0; }
@@ -228,7 +229,7 @@
   .results-head h2{ font-size:21px; margin:0 0 4px; }
   .results-head p{ font-size:13px; color:var(--ink-faint); margin:0; }
 
-  .result-card{ display:flex; gap:13px; padding:14px 4px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .result-card{ display:flex; gap:13px; padding:14px 4px; border-bottom:1px solid var(--line); cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
   .result-rank{ width:26px; text-align:center; font-family:'Newsreader',serif; color:var(--amber); font-size:17px; padding-top:2px; flex-shrink:0;}
   .result-icon{ width:50px; height:64px; flex-shrink:0; }
   .result-icon svg{ width:100%; height:100%; }
@@ -620,6 +621,8 @@ function matcherIcon(currentPart, previewValue){
    STATE
    ========================================================================= */
 
+let actionLock = false; // guards against a rapid double-tap firing pickOption/skipStep twice
+                         // before the deferred re-render (see render()) has swapped the button out.
 const state = {
   tab: "home",
   region: null,        // region code
@@ -1069,10 +1072,14 @@ function advanceStep(){
 }
 
 function pickOption(part, value){
+  if(actionLock) return;
+  actionLock = true;
   state.matcher.picks[part] = value;
   advanceStep();
 }
 function skipStep(){
+  if(actionLock) return;
+  actionLock = true;
   const part = TRAIT_ORDER[state.matcher.stepIndex];
   state.matcher.picks[part] = "skip";
   advanceStep();
@@ -1168,15 +1175,24 @@ function render(skipScrollReset){
   document.querySelectorAll("nav.tabs button").forEach(b => {
     b.classList.toggle("active", b.dataset.tab === state.tab);
   });
-  const main = document.getElementById("main");
   let html = "";
   if(state.tab === "home") html = renderHome();
   else if(state.tab === "species") html = renderSpecies();
   else if(state.tab === "identify") html = renderIdentify();
   else if(state.tab === "log") html = renderLog();
-  main.innerHTML = html;
-  if(!skipScrollReset) window.scrollTo(0,0);
-  attachSwipeHandlers();
+  // Defer the actual DOM swap to the next frame. Doing this synchronously
+  // inside the same click/tap handler that triggered it can confuse iOS
+  // Safari's touch/gesture recognizer when the tapped element itself gets
+  // replaced mid-event, which is what caused "This looks right" to need a
+  // second press. Deferring one frame lets the current tap fully resolve
+  // before the new buttons exist.
+  requestAnimationFrame(() => {
+    const main = document.getElementById("main");
+    main.innerHTML = html;
+    if(!skipScrollReset) window.scrollTo(0,0);
+    attachSwipeHandlers();
+    actionLock = false;
+  });
 }
 
 function attachSwipeHandlers(){
