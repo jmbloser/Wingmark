@@ -245,6 +245,32 @@
     margin-top:26px; font-size:11.5px; color:var(--ink-faint); line-height:1.6; border-top:1px solid var(--line); padding-top:14px;
   }
 
+  /* ---------- Sighting log form (inside species sheet) ---------- */
+  .log-form{ margin-top:18px; border-top:1px solid var(--line); padding-top:16px; }
+  .log-form .lbl-row{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint); margin:12px 0 6px; }
+  .log-form .lbl-row:first-child{ margin-top:0; }
+  .log-form .optional{ text-transform:none; letter-spacing:0; color:var(--ink-faint); font-size:11px; }
+  .log-form input[type=date], .log-form input[type=text], .log-form textarea{
+    width:100%; background:var(--bg-raise-2); border:1px solid var(--line); color:var(--ink);
+    padding:10px 12px; border-radius:8px; font-family:inherit; font-size:13.5px; outline:none;
+  }
+  .log-form textarea{ resize:vertical; }
+  .loc-input-row{ display:flex; flex-direction:column; gap:8px; }
+  .loc-input-row .btn{ align-self:flex-start; }
+  .log-form-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
+
+  /* ---------- Sighting log list ---------- */
+  .log-row{ display:flex; gap:12px; padding:14px 4px; border-bottom:1px solid var(--line); align-items:flex-start; }
+  .log-icon{ width:44px; height:56px; flex-shrink:0; }
+  .log-icon svg{ width:100%; height:100%; }
+  .log-body{ flex:1; min-width:0; }
+  .log-top{ display:flex; justify-content:space-between; gap:8px; }
+  .log-top .cn{ font-size:14.5px; color:var(--ink); }
+  .log-date{ font-size:11.5px; color:var(--ink-faint); flex-shrink:0; white-space:nowrap; }
+  .log-loc{ font-size:12.5px; color:var(--teal); margin-top:4px; }
+  .log-notes{ font-size:12.5px; color:var(--ink-dim); margin-top:5px; line-height:1.5; }
+  .log-delete{ background:none; border:none; color:var(--ink-faint); font-size:13px; padding:4px; flex-shrink:0; }
+
   @media (max-width:360px){
     .fact-grid{ grid-template-columns:1fr; }
   }
@@ -259,6 +285,7 @@
       <button data-tab="home" class="active">Home</button>
       <button data-tab="species">Species</button>
       <button data-tab="identify">Identify</button>
+      <button data-tab="log">Log</button>
     </nav>
   </header>
   <main id="main"></main>
@@ -576,10 +603,16 @@ function dragonflyIcon(tr, opts){
   </svg>`;
 }
 
-// Icon for a single trait value shown against a muted default body (used in the matcher)
-function traitIcon(part, value){
+// Icon shown during the matcher: carries forward every trait already picked
+// in this run, and previews the value currently under the finger for the
+// step in progress — so earlier answers never visually "revert".
+function matcherIcon(currentPart, previewValue){
   const base = {eye:"brown", thorax:"browntan", abdomen:"brownpalerings", wing:"clear", shape:"slender"};
-  base[part] = value;
+  TRAIT_ORDER.forEach(part => {
+    const picked = state.matcher.picks[part];
+    if(picked && picked !== "skip") base[part] = picked;
+  });
+  base[currentPart] = previewValue;
   return dragonflyIcon(base);
 }
 
@@ -592,6 +625,7 @@ const state = {
   region: null,        // region code
   regionSource: null,  // "geo" | "manual" | null
   regionLabelDetail: null, // e.g. "Delaware"
+  detectedPlace: null,     // e.g. "Lewes, Delaware" — best-guess place name from geolocation
   speciesQuery: "",
   speciesFamilyFilter: null,
   matcher: {
@@ -600,8 +634,103 @@ const state = {
     cardOffset: 0        // which option index is centered per step
   },
   matcherPhase: "intro", // intro | quiz | results
-  openSpeciesId: null
+  openSpeciesId: null,
+  logFormFor: null,    // species id currently showing the "log sighting" form
+  logDraft: null,      // {date, location, notes} while the form is open
+  sightings: []         // loaded from localStorage at startup
 };
+
+/* -------------------- Sighting log (persisted in localStorage) -------------------- */
+const SIGHTINGS_KEY = "wingmark_sightings_v1";
+
+function loadSightings(){
+  try{
+    const raw = localStorage.getItem(SIGHTINGS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e){ return []; }
+}
+function saveSightings(){
+  try{ localStorage.setItem(SIGHTINGS_KEY, JSON.stringify(state.sightings)); }
+  catch(e){ /* storage unavailable — sightings still work for this session */ }
+}
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function formatDate(iso){
+  const d = new Date(iso+"T00:00:00");
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString(undefined, {year:"numeric", month:"short", day:"numeric"});
+}
+
+function openLogForm(speciesId){
+  state.logFormFor = speciesId;
+  state.logDraft = {
+    date: todayISO(),
+    location: state.detectedPlace || state.regionLabelDetail || "",
+    notes: ""
+  };
+  render();
+}
+function cancelLogForm(){
+  state.logFormFor = null;
+  state.logDraft = null;
+  render();
+}
+function updateLogDraft(field, value){
+  if(!state.logDraft) return;
+  state.logDraft[field] = value; // no render() here — keeps focus/cursor intact while typing
+}
+function saveLogForm(speciesId){
+  const sp = SPECIES.find(s => s.id === speciesId);
+  if(!sp || !state.logDraft) return;
+  const record = {
+    id: "sight_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
+    speciesId: sp.id,
+    cn: sp.cn,
+    sn: sp.sn,
+    date: state.logDraft.date || todayISO(),
+    location: (state.logDraft.location || "").trim(),
+    notes: (state.logDraft.notes || "").trim(),
+    loggedAt: new Date().toISOString()
+  };
+  state.sightings.unshift(record);
+  saveSightings();
+  state.logFormFor = null;
+  state.logDraft = null;
+  state.openSpeciesId = null;
+  state.tab = "log";
+  render();
+}
+function deleteSighting(id){
+  if(!confirm("Delete this logged sighting? This can't be undone.")) return;
+  state.sightings = state.sightings.filter(r => r.id !== id);
+  saveSightings();
+  render();
+}
+function useCurrentLocationForLog(){
+  if(!navigator.geolocation){ alert("Geolocation isn't available in this browser."); return; }
+  const btn = document.getElementById("logLocateBtn");
+  if(btn){ btn.textContent = "Locating…"; btn.disabled = true; }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try{
+      const {latitude, longitude} = pos.coords;
+      const resp = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+      const data = await resp.json();
+      const place = [data.city || data.locality, data.principalSubdivision].filter(Boolean).join(", ");
+      const val = place || `${latitude.toFixed(3)}, ${longitude.toFixed(3)}`;
+      if(state.logDraft) state.logDraft.location = val;
+      const input = document.getElementById("logLocationInput");
+      if(input) input.value = val;
+    } catch(e){
+      alert("Couldn't reach the location service — enter the location manually.");
+    }
+    if(btn){ btn.textContent = "📍 Use current location"; btn.disabled = false; }
+  }, () => {
+    alert("Location permission was denied — enter the location manually.");
+    if(btn){ btn.textContent = "📍 Use current location"; btn.disabled = false; }
+  }, {timeout: 8000});
+}
 
 function speciesInRegion(regionCode){
   if(!regionCode) return SPECIES;
@@ -636,6 +765,7 @@ function renderHome(){
       <div class="stat"><span class="n">${list.length}</span><span class="l">Species&nbsp;nearby</span></div>
       <div class="stat"><span class="n">${Object.keys(famCounts).length}</span><span class="l">Families</span></div>
       <div class="stat"><span class="n">${SPECIES.length}</span><span class="l">In full guide</span></div>
+      <div class="stat"><span class="n">${state.sightings.length}</span><span class="l">Logged</span></div>
     </div>
     <div class="family-list">
       <h3>Families in this region</h3>
@@ -684,6 +814,8 @@ function requestGeolocation(){
         state.region = region;
         state.regionSource = "geo";
         state.regionLabelDetail = stateName;
+        const city = data.city || data.locality;
+        state.detectedPlace = city ? `${city}, ${stateName}` : stateName;
       } else {
         alert("Detected your location but couldn't map it to a supported region yet — please choose one manually.");
       }
@@ -775,6 +907,28 @@ function speciesSheet(id){
         </div>
         <div class="fact-grid">${traitFacts}</div>
         <div class="note-block"><span class="lbl">Field notes</span>${s.note}</div>
+        ${state.logFormFor === s.id ? logForm(s) : `<button class="btn amber" style="width:100%;margin-top:18px;" onclick="openLogForm('${s.id}')">Log this sighting</button>`}
+      </div>
+    </div>
+  `;
+}
+
+function logForm(sp){
+  const d = state.logDraft || {date: todayISO(), location:"", notes:""};
+  return `
+    <div class="log-form">
+      <div class="lbl-row">Date</div>
+      <input type="date" id="logDateInput" value="${d.date}" oninput="updateLogDraft('date', this.value)">
+      <div class="lbl-row">Location</div>
+      <div class="loc-input-row">
+        <input type="text" id="logLocationInput" placeholder="e.g. Trap Pond State Park" value="${d.location.replace(/"/g,'&quot;')}" oninput="updateLogDraft('location', this.value)">
+        <button class="btn ghost small" id="logLocateBtn" onclick="useCurrentLocationForLog()">📍 Use current location</button>
+      </div>
+      <div class="lbl-row">Notes <span class="optional">(optional)</span></div>
+      <textarea id="logNotesInput" rows="3" placeholder="Behavior, habitat, confidence, anything worth remembering…" oninput="updateLogDraft('notes', this.value)">${d.notes}</textarea>
+      <div class="log-form-actions">
+        <button class="btn ghost small" onclick="cancelLogForm()">Cancel</button>
+        <button class="btn amber small" onclick="saveLogForm('${sp.id}')">Save sighting</button>
       </div>
     </div>
   `;
@@ -872,7 +1026,7 @@ function renderMatcherQuiz(){
 
     <div class="swipe-stage">
       <div class="swipe-card" id="swipeCard">
-        <div class="icon-wrap">${traitIcon(part, value)}</div>
+        <div class="icon-wrap">${matcherIcon(part, value)}</div>
         <div class="trait-name">${info.options[value]}</div>
         <div class="trait-hint">${offset+1} of ${optKeys.length} options — swipe or use the arrows</div>
       </div>
@@ -963,6 +1117,44 @@ function renderMatcherResults(){
 }
 
 /* =========================================================================
+   RENDER — LOG (sighting history)
+   ========================================================================= */
+
+function renderLog(){
+  if(state.sightings.length === 0){
+    return `
+      <div class="matcher-intro">
+        <h2>No sightings yet</h2>
+        <p>When you identify a dragonfly, tap "Log this sighting" on its species page to record it here with a date, location, and notes.</p>
+        <button class="btn" onclick="goTab('identify')">Start identifying</button>
+      </div>
+    `;
+  }
+  const rows = state.sightings.map(r => {
+    const sp = SPECIES.find(s => s.id === r.speciesId);
+    return `
+      <div class="log-row">
+        <div class="log-icon" onclick="${sp ? `openSpecies('${sp.id}'); goTab('species');` : ""}">${sp ? dragonflyIcon(sp.tr) : ""}</div>
+        <div class="log-body">
+          <div class="log-top"><span class="cn">${r.cn}</span><span class="log-date">${formatDate(r.date)}</span></div>
+          <div class="sn">${r.sn}</div>
+          ${r.location ? `<div class="log-loc">📍 ${r.location}</div>` : ""}
+          ${r.notes ? `<div class="log-notes">${r.notes}</div>` : ""}
+        </div>
+        <button class="log-delete" onclick="deleteSighting('${r.id}')" title="Delete">✕</button>
+      </div>
+    `;
+  }).join("");
+  return `
+    <div class="results-head">
+      <h2>Sighting log</h2>
+      <p>${state.sightings.length} logged sighting${state.sightings.length===1?"":"s"}, stored on this device.</p>
+    </div>
+    ${rows}
+  `;
+}
+
+/* =========================================================================
    ROUTER + RENDER LOOP
    ========================================================================= */
 
@@ -981,6 +1173,7 @@ function render(skipScrollReset){
   if(state.tab === "home") html = renderHome();
   else if(state.tab === "species") html = renderSpecies();
   else if(state.tab === "identify") html = renderIdentify();
+  else if(state.tab === "log") html = renderLog();
   main.innerHTML = html;
   if(!skipScrollReset) window.scrollTo(0,0);
   attachSwipeHandlers();
@@ -1003,6 +1196,7 @@ document.querySelectorAll("nav.tabs button").forEach(b => {
   b.addEventListener("click", () => goTab(b.dataset.tab));
 });
 
+state.sightings = loadSightings();
 resetMatcher();
 render();
 </script>
